@@ -119,71 +119,63 @@ services:
 
 ---
 
-### 2. Build and Run Standalone Docker Container
+## Building & Deployment Instructions
+
+### 1. Build Local Binary (Go)
 
 ```bash
-# Build Docker image
+# Clone repository
+git clone https://github.com/jazonknight/certscanner.git
+cd certscanner
+
+# Build executable binary
+go build -o certscanner .
+```
+
+### 2. Build Single-Platform Docker Image
+
+```bash
+# Build local Docker image
 docker build -t certscanner:latest .
 
 # Tag image for Docker Hub
 docker tag certscanner:latest jazonknight/certscanner:latest
 
-# Run container mapping host port 5081 to container port 8080
+# Run container locally
 docker run -d -p 5081:8080 --name rufw-certscanner jazonknight/certscanner:latest
 ```
 
----
+### 3. Build & Push Multi-Architecture Image (`amd64` + `arm64`)
 
-### 3. Push Image to Container Registry
+> [!IMPORTANT]
+> If building on an Apple Silicon Mac (`arm64`) for deployment on Intel/AMD servers or Synology NAS (`amd64`), use `docker buildx` to build and push a multi-platform image:
 
-#### Docker Hub
 ```bash
 # 1. Login to Docker Hub
 docker login
 
-# 2. Tag image for Docker Hub
-docker tag certscanner:latest jazonknight/certscanner:latest
+# 2. Create buildx builder (one-time setup)
+docker buildx create --name multiarch --use
 
-# 3. Push image
-docker push jazonknight/certscanner:latest
+# 3. Build and push for both linux/amd64 and linux/arm64
+docker buildx build --platform linux/amd64,linux/arm64 -t jazonknight/certscanner:latest --push .
 ```
 
-#### GitHub Container Registry (ghcr.io)
-```bash
-# 1. Login to GHCR
-echo $CR_PAT | docker login ghcr.io -u <your-github-username> --password-stdin
+### 4. Cross-Compile Go Binaries (Without Docker)
 
-# 2. Tag image
-docker tag certscanner:latest ghcr.io/<your-github-username>/certscanner:latest
-
-# 3. Push image
-docker push ghcr.io/<your-github-username>/certscanner:latest
-```
-
----
-
-## Installation & Building
-
-### Prerequisites
-- Go 1.20 or later installed on your system.
-
-You can move the generated `certscanner` binary to your system PATH (e.g., `/usr/local/bin/`) to use it globally.
-
-### Cross-Platform Compilation
-
-Because `certscanner` uses 100% pure Go standard library code with no C dependencies (`CGO_ENABLED=0`), you can cross-compile single binaries for any OS from any machine:
+Because `certscanner` is 100% pure Go standard library code with `CGO_ENABLED=0`, you can cross-compile single binaries for any operating system:
 
 ```bash
-# Build for Linux (64-bit)
+# Linux (amd64)
 GOOS=linux GOARCH=amd64 go build -o certscanner-linux-amd64 .
 
-# Build for Windows (64-bit)
+# Windows (amd64)
 GOOS=windows GOARCH=amd64 go build -o certscanner-windows-amd64.exe .
 
-# Build for macOS (Apple Silicon M1/M2/M3/M4)
+# macOS (Apple Silicon M1/M2/M3/M4)
 GOOS=darwin GOARCH=arm64 go build -o certscanner-darwin-arm64 .
 
-# Build for macOS (Intel)
+# macOS (Intel)
 GOOS=darwin GOARCH=amd64 go build -o certscanner-darwin-amd64 .
 ```
 
