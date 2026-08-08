@@ -96,12 +96,26 @@ docker-compose up -d --build
 ```
 Access the service at `http://localhost:5081`.
 
-#### Custom Host Port
-You can configure a custom host port via `HOST_PORT`:
-```bash
-HOST_PORT=9090 docker-compose up -d
+#### Synology NAS Container Manager / Portainer (Pre-built Docker Hub Image)
+If you are deploying on Synology NAS or Portainer without local source code, remove the `build:` section so Synology pulls directly from Docker Hub:
+
+```yaml
+services:
+  certscanner:
+    image: jazonknight/certscanner:latest
+    container_name: rufw-certscanner
+    restart: unless-stopped
+    ports:
+      - "5081:8080"
+    environment:
+      - PORT=8080
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 ```
-Access the service at `http://localhost:9090`.
 
 ---
 
@@ -111,8 +125,11 @@ Access the service at `http://localhost:9090`.
 # Build Docker image
 docker build -t certscanner:latest .
 
+# Tag image for Docker Hub
+docker tag certscanner:latest jazonknight/certscanner:latest
+
 # Run container mapping host port 5081 to container port 8080
-docker run -d -p 5081:8080 --name certscanner certscanner:latest
+docker run -d -p 5081:8080 --name rufw-certscanner jazonknight/certscanner:latest
 ```
 
 ---
@@ -124,13 +141,11 @@ docker run -d -p 5081:8080 --name certscanner certscanner:latest
 # 1. Login to Docker Hub
 docker login
 
-# 2. Tag image with your username
-docker tag certscanner:latest <your-username>/certscanner:latest
-docker tag certscanner:latest <your-username>/certscanner:1.0.0
+# 2. Tag image for Docker Hub
+docker tag certscanner:latest jazonknight/certscanner:latest
 
 # 3. Push image
-docker push <your-username>/certscanner:latest
-docker push <your-username>/certscanner:1.0.0
+docker push jazonknight/certscanner:latest
 ```
 
 #### GitHub Container Registry (ghcr.io)
