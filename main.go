@@ -20,9 +20,15 @@ func main() {
 	var showHelp bool
 
 	var rawText string
-
 	var runServer bool
 	var serverPort int
+
+	defaultPort := 8080
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		if p, err := strconv.Atoi(envPort); err == nil {
+			defaultPort = p
+		}
+	}
 
 	flag.StringVar(&outputFormat, "o", "table", "Output format: table, json, csv")
 	flag.StringVar(&outputFormat, "output", "table", "Output format: table, json, csv")
@@ -31,7 +37,7 @@ func main() {
 	flag.BoolVar(&recursive, "r", false, "Recursively scan directories")
 	flag.BoolVar(&recursive, "recursive", false, "Recursively scan directories")
 	flag.BoolVar(&runServer, "server", false, "Start embedded HTTP web service")
-	flag.IntVar(&serverPort, "port", 8080, "HTTP server port (default 8080)")
+	flag.IntVar(&serverPort, "port", defaultPort, "HTTP server port (default 8080 or $PORT)")
 	flag.BoolVar(&showHelp, "h", false, "Show help")
 	flag.BoolVar(&showHelp, "help", false, "Show help")
 

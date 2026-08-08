@@ -86,6 +86,67 @@ curl -X POST http://localhost:8080/api/scan \
 
 ---
 
+## Docker & Docker Compose Setup
+
+### 1. Run with Docker Compose (Recommended)
+
+Start the web service with Docker Compose (default port forwarding `5081:8080`):
+```bash
+docker-compose up -d --build
+```
+Access the service at `http://localhost:5081`.
+
+#### Custom Host Port
+You can configure a custom host port via `HOST_PORT`:
+```bash
+HOST_PORT=9090 docker-compose up -d
+```
+Access the service at `http://localhost:9090`.
+
+---
+
+### 2. Build and Run Standalone Docker Container
+
+```bash
+# Build Docker image
+docker build -t certscanner:latest .
+
+# Run container mapping host port 5081 to container port 8080
+docker run -d -p 5081:8080 --name certscanner certscanner:latest
+```
+
+---
+
+### 3. Push Image to Container Registry
+
+#### Docker Hub
+```bash
+# 1. Login to Docker Hub
+docker login
+
+# 2. Tag image with your username
+docker tag certscanner:latest <your-username>/certscanner:latest
+docker tag certscanner:latest <your-username>/certscanner:1.0.0
+
+# 3. Push image
+docker push <your-username>/certscanner:latest
+docker push <your-username>/certscanner:1.0.0
+```
+
+#### GitHub Container Registry (ghcr.io)
+```bash
+# 1. Login to GHCR
+echo $CR_PAT | docker login ghcr.io -u <your-github-username> --password-stdin
+
+# 2. Tag image
+docker tag certscanner:latest ghcr.io/<your-github-username>/certscanner:latest
+
+# 3. Push image
+docker push ghcr.io/<your-github-username>/certscanner:latest
+```
+
+---
+
 ## Installation & Building
 
 ### Prerequisites

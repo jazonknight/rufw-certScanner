@@ -1,0 +1,10 @@
+.git
+.gitignore
+certscanner
+*.test
+*.out
+*.prof
+testdata/
+README.md
+Dockerfile
+docker-compose.yml
