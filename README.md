@@ -15,7 +15,74 @@
   - Issuer DN
   - Expiration Date (`NotAfter`) & Expiration Status (`X days left`, `EXPIRING SOON`, `EXPIRED`)
 - **Flexible Input Sources**: Accepts single files, multiple files, recursive directory scanning (`-r` for `.pem`, `.crt`, `.cer`, `.cert`, `.ca-bundle`), or stdin stream piping (`cat cert.pem | certscanner`).
+- **Embedded HTTP Web Service**: Run `certscanner --server --port 8080` to launch an HTTP REST API (`POST /api/scan`) and an embedded interactive Web UI for analyzing certificates in HTTP request bodies.
 - **Multiple Output Formats**: Supports aligned text tables (`table`), structured JSON (`json`), and CSV (`csv`).
+
+---
+
+## Web Service & HTTP API Mode
+
+Launch the embedded web service:
+```bash
+./certscanner --server --port 8080
+```
+This starts an HTTP server serving:
+1. **Interactive Web UI**: Open `http://localhost:8080/` in a browser to paste or upload certificates and view visual reports.
+### Security Guardrails
+
+The API includes built-in production security guardrails:
+- **Max Request Body Limit (2 MB)**: Wrapped with `http.MaxBytesReader` to block DoS / memory-exhaustion attacks from oversized payloads. Returns `413 Payload Too Large`.
+- **HTTP Timeouts**: Configured with strict 10s Read/Write timeouts to prevent Slowloris attacks.
+- **Security Headers**: Injects `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `X-XSS-Protection: 1; mode=block`.
+
+### API Usage Examples
+
+#### 1. Send Raw PEM in Request Body (`text/plain`)
+```bash
+curl -X POST http://localhost:8080/api/scan \
+  -H "Content-Type: text/plain" \
+  --data-binary "@bundle.crt"
+```
+
+#### 2. Send JSON Payload
+```bash
+curl -X POST http://localhost:8080/api/scan \
+  -H "Content-Type: application/json" \
+  -d '{"pem": "-----BEGIN CERTIFICATE-----\n..."}'
+```
+
+#### 3. Upload File via Multipart Form
+```bash
+curl -X POST http://localhost:8080/api/scan \
+  -F "file=@bundle.crt"
+```
+
+### Response Payload Structure
+```json
+{
+  "summary": {
+    "total": 2,
+    "valid": 2,
+    "expiring_soon": 1,
+    "expired": 0
+  },
+  "certificates": [
+    {
+      "file_path": "request_body",
+      "line_number": 4,
+      "subject": "CN=api.example.com,O=Sample Org",
+      "common_name": "api.example.com",
+      "domains": ["api.example.com", "v1.api.example.com"],
+      "issuer": "CN=api.example.com,O=Sample Org",
+      "not_before": "2026-08-08T21:18:44Z",
+      "not_after": "2026-08-23T21:18:44Z",
+      "days_remaining": 14,
+      "is_expired": false
+    }
+  ],
+  "scanned_at": "2026-08-08T23:19:00Z"
+}
+```
 
 ---
 

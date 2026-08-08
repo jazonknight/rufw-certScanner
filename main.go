@@ -21,12 +21,17 @@ func main() {
 
 	var rawText string
 
+	var runServer bool
+	var serverPort int
+
 	flag.StringVar(&outputFormat, "o", "table", "Output format: table, json, csv")
 	flag.StringVar(&outputFormat, "output", "table", "Output format: table, json, csv")
 	flag.StringVar(&rawText, "s", "", "Pass certificate PEM text directly as a string")
 	flag.StringVar(&rawText, "text", "", "Pass certificate PEM text directly as a string")
 	flag.BoolVar(&recursive, "r", false, "Recursively scan directories")
 	flag.BoolVar(&recursive, "recursive", false, "Recursively scan directories")
+	flag.BoolVar(&runServer, "server", false, "Start embedded HTTP web service")
+	flag.IntVar(&serverPort, "port", 8080, "HTTP server port (default 8080)")
 	flag.BoolVar(&showHelp, "h", false, "Show help")
 	flag.BoolVar(&showHelp, "help", false, "Show help")
 
@@ -37,11 +42,13 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  -s, --text string     Pass certificate PEM text directly\n")
 		fmt.Fprintf(os.Stderr, "  -o, --output string   Output format (table, json, csv) (default \"table\")\n")
 		fmt.Fprintf(os.Stderr, "  -r, --recursive       Recursively scan directories\n")
+		fmt.Fprintf(os.Stderr, "  --server              Start HTTP web service\n")
+		fmt.Fprintf(os.Stderr, "  --port int            HTTP web service port (default 8080)\n")
 		fmt.Fprintf(os.Stderr, "  -h, --help            Show help\n\n")
 		fmt.Fprintf(os.Stderr, "Examples:\n")
 		fmt.Fprintf(os.Stderr, "  certscanner cert.pem\n")
+		fmt.Fprintf(os.Stderr, "  certscanner --server --port 8080\n")
 		fmt.Fprintf(os.Stderr, "  certscanner -s \"$(pbpaste)\"\n")
-		fmt.Fprintf(os.Stderr, "  certscanner (paste text, press Ctrl+D)\n")
 		fmt.Fprintf(os.Stderr, "  cat cert.pem | certscanner\n")
 	}
 
@@ -53,6 +60,15 @@ func main() {
 	}
 
 	args := flag.Args()
+
+	if runServer || (len(args) > 0 && args[0] == "serve") {
+		if err := StartServer(serverPort); err != nil {
+			fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	var allCerts []CertInfo
 
 	if rawText != "" {
